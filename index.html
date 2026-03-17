@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAMI Project Tracker — Gantt</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1F3864;
+    --blue: #2E75B6;
+    --blue-light: #5BA3D9;
+    --blue-pale: #EBF3FB;
+    --green: #70AD47;
+    --yellow: #FFD966;
+    --red: #FF7070;
+    --red-today: #E24B4A;
+    --gray: #D9D9D9;
+    --gray-border: #E2E8F0;
+    --gray-bg: #F8FAFC;
+    --text: #1A202C;
+    --text-muted: #64748B;
+    --white: #ffffff;
+    --phase-bg: #EFF6FF;
+    --task-bg: #F8FAFC;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); color: var(--text); background: var(--gray-bg); font-size: 13px; min-height: 100vh; }
+
+  /* ── Header ── */
+  .app-header {
+    background: var(--navy);
+    color: white;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .header-title { font-size: 15px; font-weight: 500; }
+  .header-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .sync-status { font-size: 11px; color: rgba(255,255,255,0.6); font-family: var(--mono); display: flex; align-items: center; gap: 5px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .sync-dot.syncing { background: var(--yellow); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Buttons ── */
+  .btn { font-family: var(--font); font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: var(--radius); cursor: pointer; border: 1px solid transparent; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+  .btn-primary:hover { background: #1A5C96; }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.18); }
+  .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--gray-border); font-size: 11px; padding: 4px 8px; }
+  .btn-ghost:hover { background: var(--gray-bg); color: var(--text); }
+  .btn-danger { color: var(--red-today); }
+  .btn-danger:hover { background: #FEF2F2; }
+  .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 13px; padding: 2px 4px; border-radius: 4px; line-height: 1; transition: all 0.1s; }
+  .btn-icon:hover { color: var(--text); background: var(--gray-border); }
+  .btn-icon.danger:hover { color: var(--red-today); background: #FEF2F2; }
+
+  /* ── Main layout ── */
+  .main { padding: 20px 24px 40px; }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar-spacer { flex: 1; }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+  .leg-swatch { width: 14px; height: 8px; border-radius: 2px; }
+
+  /* ── Gantt container ── */
+  .gantt-container { background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; border: 1px solid var(--gray-border); }
+  .gantt-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+
+  /* Column widths */
+  .col-task { width: 230px; min-width: 230px; }
+  .col-deliv { width: 170px; min-width: 170px; }
+  .col-status { width: 110px; min-width: 110px; }
+  .col-week { width: 26px; min-width: 26px; }
+
+  /* Header rows */
+  .hdr-month td, .hdr-month th {
+    background: var(--navy);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 6px 4px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    position: sticky;
+    top: 56px;
+    z-index: 100;
+  }
+  .hdr-month .col-task, .hdr-month .col-deliv, .hdr-month .col-status { text-align: left; padding-left: 12px; }
+  .hdr-week td, .hdr-week th {
+    background: #2C4A7C;
+    color: rgba(255,255,255,0.75);
+    font-size: 10px;
+    font-family: var(--mono);
+    text-align: center;
+    padding: 4px 2px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    position: sticky;
+    top: calc(56px + 29px);
+    z-index: 100;
+  }
+  .hdr-week .today-hdr { background: var(--red-today); color: white; font-weight: 600; }
+
+  /* Phase rows */
+  .phase-row td {
+    background: var(--phase-bg);
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    border-bottom: 1px solid #DBEAFE;
+    border-top: 2px solid #BFDBFE;
+  }
+  .phase-row .phase-cell { display: flex; align-items: center; gap: 6px; }
+
+  /* Task rows */
+  .task-row td { border-bottom: 1px solid var(--gray-border); vertical-align: middle; }
+  .task-row.alt td { background: #FAFBFF; }
+  .task-row td.bar-td { padding: 3px 1px; }
+
+  /* Labels */
+  .task-label { display: flex; align-items: center; gap: 4px; padding: 5px 8px 5px 12px; }
+  .task-label .label-txt { flex: 1; font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub-label { display: flex; align-items: center; gap: 4px; padding: 4px 8px 4px 28px; }
+  .sub-label .label-txt { flex: 1; font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: italic; }
+  .deliv-cell { padding: 4px 8px; font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
+  .status-cell { padding: 3px 6px; text-align: center; }
+  .row-actions { display: flex; gap: 1px; opacity: 0; transition: opacity 0.15s; }
+  tr:hover .row-actions { opacity: 1; }
+
+  /* Status select */
+  .status-sel {
+    font-family: var(--font);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 4px;
+    border: 1px solid var(--gray-border);
+    border-radius: 5px;
+    width: 100%;
+    cursor: pointer;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  /* Gantt bars */
+  .bar { height: 12px; border-radius: 3px; cursor: ew-resize; transition: filter 0.1s; }
+  .bar:hover { filter: brightness(1.12); }
+  .bar-task { background: var(--navy); }
+  .bar-sub { background: var(--blue-light); }
+  .today-col { background: rgba(226,75,74,0.06); }
+
+  /* Add subtask row */
+  .add-sub-row td { border-bottom: 1px solid var(--gray-border); }
+  .add-sub-btn { display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 28px; cursor: pointer; color: var(--blue); font-size: 11px; opacity: 0.6; transition: opacity 0.15s; }
+  .add-sub-btn:hover { opacity: 1; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.4);
+    backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 500;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    box-shadow: var(--shadow-md);
+    animation: slideUp 0.15s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 18px; color: var(--navy); }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-row input, .form-row select {
+    width: 100%; font-family: var(--font); font-size: 13px;
+    padding: 7px 10px; border: 1px solid var(--gray-border);
+    border-radius: var(--radius); background: white; color: var(--text);
+    transition: border-color 0.15s;
+  }
+  .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(46,117,182,0.1); }
+  .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .modal-actions .btn { font-size: 13px; padding: 7px 16px; }
+  .btn-cancel { background: var(--gray-bg); color: var(--text); border-color: var(--gray-border); }
+  .btn-cancel:hover { background: #F1F5F9; }
+  .btn-save { background: var(--navy); color: white; border-color: var(--navy); }
+  .btn-save:hover { background: var(--blue); }
+
+  /* ── Loading ── */
+  .loading-screen {
+    position: fixed; inset: 0; background: var(--navy);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999; color: white; gap: 16px;
+  }
+  .loading-spinner {
+    width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--navy); color: white;
+    padding: 10px 16px; border-radius: var(--radius);
+    font-size: 12px; z-index: 999;
+    animation: slideIn 0.2s ease;
+    box-shadow: var(--shadow-md);
+  }
+  @keyframes slideIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  /* Scrollbar */
+  .gantt-scroll::-webkit-scrollbar { height: 6px; }
+  .gantt-scroll::-webkit-scrollbar-track { background: var(--gray-bg); }
+  .gantt-scroll::-webkit-scrollbar-thumb { background: var(--gray-border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Connecting to NAMI Project Tracker…</div>
+</div>
+
+<header class="app-header">
+  <div class="header-left">
+    <span class="header-logo">TRG</span>
+    <div class="header-divider"></div>
+    <span class="header-title">NAMI Project Tracker</span>
+  </div>
+  <div class="header-actions">
+    <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-text">Live</span></div>
+    <button class="btn btn-secondary" onclick="openAddPhase()">+ Phase</button>
+    <button class="btn btn-primary" onclick="openAddTask()">+ Task</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="toolbar">
+    <div class="legend">
+      <div class="leg"><div class="leg-swatch" style="background:var(--navy)"></div>Task</div>
+      <div class="leg"><div class="leg-swatch" style="background:var(--blue-light)"></div>Subtask</div>
+      <div class="leg"><div class="leg-swatch" style="background:var(--green)"></div>Complete</div>
+      <div class="leg"><div class="leg-swatch" style="background:var(--yellow)"></div>In Progress</div>
+      <div class="leg"><div class="leg-swatch" style="background:var(--red)"></div>At Risk</div>
+      <div class="leg"><div class="leg-swatch" style="background:var(--red-today);width:4px;border-radius:1px"></div>Today</div>
+    </div>
+    <div class="toolbar-spacer"></div>
+    <span style="font-size:11px;color:var(--text-muted)">Drag bars to reschedule · Click ✎ to edit</span>
+  </div>
+
+  <div class="gantt-container">
+    <div class="gantt-scroll">
+      <table id="gtable"><tbody id="gtbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDpiy-ZIwkIWnnBKg25wetD-Eu7eSpFBVs",
+  authDomain: "nami-project-tracker.firebaseapp.com",
+  projectId: "nami-project-tracker",
+  storageBucket: "nami-project-tracker.firebasestorage.app",
+  messagingSenderId: "732244215749",
+  appId: "1:732244215749:web:8963f703f86d9b8eb9adac"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const DOC_REF = doc(db, 'gantt', 'main');
+
+const STATUS_COLORS = {
+  'Not Started': { bg:'#F1F5F9', color:'#475569' },
+  'In Progress':  { bg:'#FEF9C3', color:'#854D0E' },
+  'Complete':     { bg:'#DCFCE7', color:'#166534' },
+  'At Risk':      { bg:'#FEE2E2', color:'#991B1B' },
+};
+
+const BAR_COLORS = {
+  'Not Started': { task:'#1F3864', sub:'#5BA3D9' },
+  'In Progress':  { task:'#1A5C96', sub:'#2E75B6' },
+  'Complete':     { task:'#4A8A2A', sub:'#70AD47' },
+  'At Risk':      { task:'#C0392B', sub:'#E74C3C' },
+};
+
+const DEFAULT_DATA = {
+  phases:[
+    {id:'p1',name:'Kick Off',tasks:[
+      {id:'t1',name:'Kick Off Meeting',deliverable:'Revised workplan',start:'2026-03-16',end:'2026-03-20',status:'Not Started',subs:[
+        {id:'s1a',name:'Subtask 1',deliverable:'',start:'',end:'',status:'Not Started'},
+        {id:'s1b',name:'Subtask 2',deliverable:'',start:'',end:'',status:'Not Started'},
+      ]},
+      {id:'t2',name:'Document Review',deliverable:'Summary of findings',start:'2026-03-16',end:'2026-03-27',status:'Not Started',subs:[]},
+      {id:'t3',name:'Discussions with NAMI Leaders',deliverable:'Summary of findings',start:'2026-03-20',end:'2026-04-03',status:'Not Started',subs:[]},
+    ]},
+    {id:'p2',name:'Design',tasks:[
+      {id:'t4',name:'Draft and finalize audience and scoping',deliverable:'Audience and scoping',start:'2026-03-20',end:'2026-04-17',status:'Not Started',subs:[]},
+      {id:'t5',name:'Develop program and course level objectives',deliverable:'Objectives',start:'2026-03-20',end:'2026-04-17',status:'Not Started',subs:[]},
+      {id:'t6',name:'Finalize scoping, audience and objectives',deliverable:'Audience, Scoping and Objectives',start:'2026-04-17',end:'2026-04-24',status:'Not Started',subs:[]},
+      {id:'t7',name:'Create course level blueprints',deliverable:'Course Blueprints',start:'2026-04-27',end:'2026-05-15',status:'Not Started',subs:[]},
+    ]},
+    {id:'p3',name:'Development (Novice Level)',tasks:[
+      {id:'t8',name:'Develop virtual course design',deliverable:'Virtual Delivery Design',start:'2026-05-18',end:'2026-05-29',status:'Not Started',subs:[]},
+      {id:'t9',name:'Create virtual course materials and resources',deliverable:'Virtual Content Materials',start:'2026-06-01',end:'2026-06-30',status:'Not Started',subs:[]},
+      {id:'t10',name:'Adapt virtual delivery guide for in-person',deliverable:'In Person Delivery Design',start:'2026-07-01',end:'2026-07-17',status:'Not Started',subs:[]},
+      {id:'t11',name:'Create adapted content for in-person delivery',deliverable:'In Person Content and Materials',start:'2026-07-01',end:'2026-07-24',status:'Not Started',subs:[]},
+      {id:'t12',name:'Create course protocols',deliverable:'Course Protocols (Virtual and In Person)',start:'2026-07-27',end:'2026-08-07',status:'Not Started',subs:[]},
+      {id:'t13',name:'Create tracking templates',deliverable:'Tracking Templates (Virtual and In Person)',start:'2026-08-03',end:'2026-08-14',status:'Not Started',subs:[]},
+    ]},
+    {id:'p4',name:'Prepare Pilot',tasks:[
+      {id:'t14',name:'Conduct a final materials walk through',deliverable:'All Final Novice Products',start:'2026-08-17',end:'2026-09-04',status:'Not Started',subs:[]},
+      {id:'t15',name:'Host a handover meeting with trainers',deliverable:'Meeting Notes and Follow-up',start:'2026-09-07',end:'2026-09-18',status:'Not Started',subs:[]},
+      {id:'t16',name:'Final debrief with NAMI counterparts',deliverable:'Final Notes and Recommendations',start:'2026-09-21',end:'2026-09-25',status:'Not Started',subs:[]},
+    ]},
+  ]
+};
+
+let data = null;
+let dragState = null;
+let isSaving = false;
+let remoteUpdate = false;
+
+const PROJECT_START = new Date('2026-03-16T00:00:00');
+const PROJECT_END   = new Date('2026-09-30T00:00:00');
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+
+function getWeeks(){
+  const weeks=[]; let d=new Date(PROJECT_START);
+  d.setDate(d.getDate()-((d.getDay()+6)%7));
+  while(d<=PROJECT_END){weeks.push(new Date(d));d.setDate(d.getDate()+7);}
+  return weeks;
+}
+const WEEKS = getWeeks();
+
+function uid(){ return '_'+Math.random().toString(36).slice(2,9); }
+function strToDate(s){ if(!s)return null; const d=new Date(s+'T00:00:00'); return isNaN(d)?null:d; }
+function dateToStr(d){ if(!d||isNaN(d))return''; return d.toISOString().slice(0,10); }
+function weekOverlap(ws,start,end){ if(!start||!end)return false; const we=new Date(ws); we.setDate(we.getDate()+6); return ws<=end&&we>=start; }
+function isToday(w){ return w<=TODAY && TODAY<new Date(w.getTime()+7*86400000); }
+
+function setSyncStatus(state){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-text');
+  if(state==='live'){dot.className='sync-dot';txt.textContent='Live';}
+  else if(state==='saving'){dot.className='sync-dot syncing';txt.textContent='Saving…';}
+  else{dot.className='sync-dot error';txt.textContent='Offline';}
+}
+
+function showToast(msg){
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),2500);
+}
+
+async function saveData(){
+  if(isSaving)return;
+  isSaving=true;setSyncStatus('saving');
+  try{
+    await setDoc(DOC_REF, {data: JSON.stringify(data), updatedAt: Date.now()});
+    setSyncStatus('live');
+  }catch(e){
+    console.error(e);setSyncStatus('error');showToast('Save failed — check connection');
+  }
+  isSaving=false;
+}
+
+function render(){
+  const tbody=document.getElementById('gtbody');
+  tbody.innerHTML='';
+
+  // Month header row
+  const mrow=document.createElement('tr');mrow.className='hdr-month';
+  const mth1=document.createElement('td');mth1.className='col-task';mth1.textContent='Phase / Task';mrow.appendChild(mth1);
+  const mth2=document.createElement('td');mth2.className='col-deliv';mth2.textContent='Deliverable';mrow.appendChild(mth2);
+  const mth3=document.createElement('td');mth3.className='col-status';mth3.textContent='Status';mrow.appendChild(mth3);
+  let prevMonth=-1;
+  WEEKS.forEach((w,i)=>{
+    const m=w.getMonth();
+    if(m!==prevMonth){
+      const span=WEEKS.slice(i).filter(x=>x.getMonth()===m).length;
+      const th=document.createElement('td');th.colSpan=span;
+      th.textContent=w.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+      th.style.textAlign='center';mrow.appendChild(th);prevMonth=m;
+    }
+  });
+  tbody.appendChild(mrow);
+
+  // Week day row
+  const wrow=document.createElement('tr');wrow.className='hdr-week';
+  ['','',''].forEach(()=>{const td=document.createElement('td');wrow.appendChild(td);});
+  WEEKS.forEach(w=>{
+    const td=document.createElement('td');td.className='col-week'+(isToday(w)?' today-hdr':'');
+    td.textContent=w.getDate();wrow.appendChild(td);
+  });
+  tbody.appendChild(wrow);
+
+  let altIdx=0;
+  data.phases.forEach(phase=>{
+    // Phase row
+    const pr=document.createElement('tr');pr.className='phase-row';
+    const ptd=document.createElement('td');ptd.colSpan=3+WEEKS.length;
+    ptd.innerHTML=`<div class="phase-cell">
+      <span>${phase.name}</span>
+      <button class="btn-icon danger" onclick="deletePhase('${phase.id}')" title="Delete phase">✕</button>
+    </div>`;
+    pr.appendChild(ptd);tbody.appendChild(pr);
+
+    phase.tasks.forEach(task=>{
+      const tStart=strToDate(task.start),tEnd=strToDate(task.end);
+      const alt=altIdx++%2===0;
+      const tr=document.createElement('tr');tr.className='task-row'+(alt?' alt':'');
+
+      // Task label
+      const tdL=document.createElement('td');tdL.className='col-task';
+      tdL.innerHTML=`<div class="task-label">
+        <span class="label-txt" title="${task.name}">${task.name}</span>
+        <div class="row-actions">
+          <button class="btn-icon" onclick="openAddSub('${phase.id}','${task.id}')" title="Add subtask">+</button>
+          <button class="btn-icon" onclick="openEditTask('${phase.id}','${task.id}')" title="Edit">✎</button>
+          <button class="btn-icon danger" onclick="deleteTask('${phase.id}','${task.id}')" title="Delete">✕</button>
+        </div>
+      </div>`;
+      tr.appendChild(tdL);
+
+      // Deliverable
+      const tdD=document.createElement('td');tdD.className='col-deliv';
+      const dd=document.createElement('div');dd.className='deliv-cell';dd.title=task.deliverable;dd.textContent=task.deliverable;
+      tdD.appendChild(dd);tr.appendChild(tdD);
+
+      // Status
+      const tdS=document.createElement('td');tdS.className='col-status status-cell';
+      const sel=document.createElement('select');sel.className='status-sel';
+      const sc=STATUS_COLORS[task.status]||STATUS_COLORS['Not Started'];
+      sel.style.background=sc.bg;sel.style.color=sc.color;sel.style.borderColor=sc.bg;
+      ['Not Started','In Progress','Complete','At Risk'].forEach(s=>{
+        const o=document.createElement('option');o.value=s;o.textContent=s;if(s===task.status)o.selected=true;sel.appendChild(o);
+      });
+      sel.onchange=e=>{
+        task.status=e.target.value;
+        const c=STATUS_COLORS[task.status];sel.style.background=c.bg;sel.style.color=c.color;sel.style.borderColor=c.bg;
+        saveData();render();
+      };
+      tdS.appendChild(sel);tr.appendChild(tdS);
+
+      // Bar cells
+      WEEKS.forEach((w,wi)=>{
+        const td=document.createElement('td');td.className='bar-td'+(isToday(w)?' today-col':'');
+        if(tStart&&tEnd&&weekOverlap(w,tStart,tEnd)){
+          const bar=document.createElement('div');
+          bar.className='bar bar-task';
+          bar.style.background=BAR_COLORS[task.status]?.task||'#1F3864';
+          bar.title=`${task.name}\n${task.start} → ${task.end}`;
+          bar.draggable=true;
+          bar.addEventListener('dragstart',e=>{
+            dragState={phaseId:phase.id,taskId:task.id,subId:null,weekIdx:wi};
+            e.dataTransfer.effectAllowed='move';
+          });
+          td.appendChild(bar);
+        }
+        td.addEventListener('dragover',e=>e.preventDefault());
+        td.addEventListener('drop',e=>{e.preventDefault();handleDrop(wi);});
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+
+      // Subtask rows
+      task.subs.forEach(sub=>{
+        const sStart=strToDate(sub.start),sEnd=strToDate(sub.end);
+        const sr=document.createElement('tr');sr.className='task-row'+(alt?' alt':'');
+        const stL=document.createElement('td');stL.className='col-task';
+        stL.innerHTML=`<div class="sub-label">
+          <span class="label-txt" title="${sub.name}">${sub.name}</span>
+          <div class="row-actions">
+            <button class="btn-icon" onclick="openEditSub('${phase.id}','${task.id}','${sub.id}')" title="Edit">✎</button>
+            <button class="btn-icon danger" onclick="deleteSub('${phase.id}','${task.id}','${sub.id}')" title="Delete">✕</button>
+          </div>
+        </div>`;
+        sr.appendChild(stL);
+        const stD=document.createElement('td');stD.className='col-deliv';
+        const sdd=document.createElement('div');sdd.className='deliv-cell';sdd.textContent=sub.deliverable||'—';stD.appendChild(sdd);sr.appendChild(stD);
+        const stS=document.createElement('td');stS.className='col-status status-cell';
+        const ssel=document.createElement('select');ssel.className='status-sel';
+        const ssc=STATUS_COLORS[sub.status]||STATUS_COLORS['Not Started'];
+        ssel.style.background=ssc.bg;ssel.style.color=ssc.color;ssel.style.borderColor=ssc.bg;
+        ['Not Started','In Progress','Complete','At Risk'].forEach(s=>{
+          const o=document.createElement('option');o.value=s;o.textContent=s;if(s===sub.status)o.selected=true;ssel.appendChild(o);
+        });
+        ssel.onchange=e=>{
+          sub.status=e.target.value;
+          const c=STATUS_COLORS[sub.status];ssel.style.background=c.bg;ssel.style.color=c.color;ssel.style.borderColor=c.bg;
+          saveData();render();
+        };
+        stS.appendChild(ssel);sr.appendChild(stS);
+        WEEKS.forEach((w,wi)=>{
+          const td=document.createElement('td');td.className='bar-td'+(isToday(w)?' today-col':'');
+          if(sStart&&sEnd&&weekOverlap(w,sStart,sEnd)){
+            const bar=document.createElement('div');bar.className='bar bar-sub';
+            bar.style.background=BAR_COLORS[sub.status]?.sub||'#5BA3D9';
+            bar.title=`${sub.name}\n${sub.start} → ${sub.end}`;
+            bar.draggable=true;
+            bar.addEventListener('dragstart',e=>{
+              dragState={phaseId:phase.id,taskId:task.id,subId:sub.id,weekIdx:wi};
+              e.dataTransfer.effectAllowed='move';
+            });
+            td.appendChild(bar);
+          }
+          td.addEventListener('dragover',e=>e.preventDefault());
+          td.addEventListener('drop',e=>{e.preventDefault();handleDrop(wi);});
+          sr.appendChild(td);
+        });
+        tbody.appendChild(sr);
+      });
+
+      // Add subtask button row
+      const asr=document.createElement('tr');asr.className='add-sub-row';
+      const astd=document.createElement('td');astd.colSpan=3+WEEKS.length;
+      astd.innerHTML=`<div class="add-sub-btn" onclick="openAddSub('${phase.id}','${task.id}')">＋ add subtask</div>`;
+      asr.appendChild(astd);tbody.appendChild(asr);
+    });
+  });
+}
+
+function handleDrop(targetWeekIdx){
+  if(!dragState)return;
+  const delta=targetWeekIdx-dragState.weekIdx;
+  if(delta===0){dragState=null;return;}
+  const phase=data.phases.find(p=>p.id===dragState.phaseId);if(!phase)return;
+  const task=phase.tasks.find(t=>t.id===dragState.taskId);if(!task)return;
+  const item=dragState.subId?task.subs.find(s=>s.id===dragState.subId):task;
+  if(!item||!item.start||!item.end){dragState=null;return;}
+  const s=strToDate(item.start),e=strToDate(item.end);
+  s.setDate(s.getDate()+delta*7);e.setDate(e.getDate()+delta*7);
+  item.start=dateToStr(s);item.end=dateToStr(e);
+  dragState=null;saveData();render();
+  showToast(`Shifted by ${delta>0?'+':''}${delta} week${Math.abs(delta)!==1?'s':''}`);
+}
+
+// ── Modal helpers ──
+function showModal(html){ document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()">${html}</div>`; }
+window.closeModal=()=>{ document.getElementById('modal-root').innerHTML=''; };
+
+window.openAddPhase=()=>{
+  showModal(`<div class="modal"><div class="modal-title">Add phase</div>
+    <div class="form-row"><label>Phase name</label><input id="f-pname" placeholder="e.g. Evaluation" autofocus></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="addPhase()">Add phase</button>
+    </div></div>`);
+};
+window.addPhase=()=>{
+  const name=document.getElementById('f-pname').value.trim();if(!name)return;
+  data.phases.push({id:uid(),name,tasks:[]});saveData();closeModal();render();
+};
+
+window.openAddTask=()=>{
+  const opts=data.phases.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  showModal(`<div class="modal"><div class="modal-title">Add task</div>
+    <div class="form-row"><label>Phase</label><select id="f-phase">${opts}</select></div>
+    <div class="form-row"><label>Task name</label><input id="f-tname" placeholder="Task name" autofocus></div>
+    <div class="form-row"><label>Deliverable</label><input id="f-deliv" placeholder="What gets delivered?"></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Start date</label><input id="f-start" type="date" value="2026-03-16"></div>
+      <div class="form-row"><label>End date</label><input id="f-end" type="date" value="2026-04-01"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="addTask()">Add task</button>
+    </div></div>`);
+};
+window.addTask=()=>{
+  const phaseId=document.getElementById('f-phase').value;
+  const name=document.getElementById('f-tname').value.trim();
+  const deliv=document.getElementById('f-deliv').value.trim();
+  const start=document.getElementById('f-start').value;
+  const end=document.getElementById('f-end').value;
+  if(!name||!start||!end)return;
+  const phase=data.phases.find(p=>p.id===phaseId);if(!phase)return;
+  phase.tasks.push({id:uid(),name,deliverable:deliv,start,end,status:'Not Started',subs:[]});
+  saveData();closeModal();render();
+};
+
+window.openEditTask=(phaseId,taskId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
+  showModal(`<div class="modal"><div class="modal-title">Edit task</div>
+    <div class="form-row"><label>Task name</label><input id="f-tname" value="${task.name}" autofocus></div>
+    <div class="form-row"><label>Deliverable</label><input id="f-deliv" value="${task.deliverable}"></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Start date</label><input id="f-start" type="date" value="${task.start}"></div>
+      <div class="form-row"><label>End date</label><input id="f-end" type="date" value="${task.end}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="saveEditTask('${phaseId}','${taskId}')">Save changes</button>
+    </div></div>`);
+};
+window.saveEditTask=(phaseId,taskId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
+  task.name=document.getElementById('f-tname').value.trim()||task.name;
+  task.deliverable=document.getElementById('f-deliv').value.trim();
+  task.start=document.getElementById('f-start').value;
+  task.end=document.getElementById('f-end').value;
+  saveData();closeModal();render();
+};
+
+window.openAddSub=(phaseId,taskId)=>{
+  showModal(`<div class="modal"><div class="modal-title">Add subtask</div>
+    <div class="form-row"><label>Subtask name</label><input id="f-sname" placeholder="Subtask name" autofocus></div>
+    <div class="form-row"><label>Deliverable (optional)</label><input id="f-sdeliv" placeholder=""></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Start date</label><input id="f-sstart" type="date"></div>
+      <div class="form-row"><label>End date</label><input id="f-send" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="addSub('${phaseId}','${taskId}')">Add subtask</button>
+    </div></div>`);
+};
+window.addSub=(phaseId,taskId)=>{
+  const name=document.getElementById('f-sname').value.trim();if(!name)return;
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
+  task.subs.push({id:uid(),name,deliverable:document.getElementById('f-sdeliv').value.trim(),start:document.getElementById('f-sstart').value,end:document.getElementById('f-send').value,status:'Not Started'});
+  saveData();closeModal();render();
+};
+
+window.openEditSub=(phaseId,taskId,subId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);
+  const sub=task&&task.subs.find(s=>s.id===subId);if(!sub)return;
+  showModal(`<div class="modal"><div class="modal-title">Edit subtask</div>
+    <div class="form-row"><label>Subtask name</label><input id="f-sname" value="${sub.name}" autofocus></div>
+    <div class="form-row"><label>Deliverable</label><input id="f-sdeliv" value="${sub.deliverable||''}"></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Start date</label><input id="f-sstart" type="date" value="${sub.start}"></div>
+      <div class="form-row"><label>End date</label><input id="f-send" type="date" value="${sub.end}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="saveEditSub('${phaseId}','${taskId}','${subId}')">Save changes</button>
+    </div></div>`);
+};
+window.saveEditSub=(phaseId,taskId,subId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);
+  const sub=task&&task.subs.find(s=>s.id===subId);if(!sub)return;
+  sub.name=document.getElementById('f-sname').value.trim()||sub.name;
+  sub.deliverable=document.getElementById('f-sdeliv').value.trim();
+  sub.start=document.getElementById('f-sstart').value;
+  sub.end=document.getElementById('f-send').value;
+  saveData();closeModal();render();
+};
+
+window.deleteTask=(phaseId,taskId)=>{
+  if(!confirm('Delete this task and all its subtasks?'))return;
+  const phase=data.phases.find(p=>p.id===phaseId);if(!phase)return;
+  phase.tasks=phase.tasks.filter(t=>t.id!==taskId);
+  saveData();render();
+};
+window.deleteSub=(phaseId,taskId,subId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
+  task.subs=task.subs.filter(s=>s.id!==subId);
+  saveData();render();
+};
+window.deletePhase=(phaseId)=>{
+  if(!confirm('Delete this entire phase and all its tasks?'))return;
+  data.phases=data.phases.filter(p=>p.id!==phaseId);
+  saveData();render();
+};
+
+// ── Bootstrap: load from Firestore, then listen for changes ──
+async function init(){
+  try{
+    const snap=await getDoc(DOC_REF);
+    if(snap.exists()&&snap.data().data){
+      data=JSON.parse(snap.data().data);
+    } else {
+      data=JSON.parse(JSON.stringify(DEFAULT_DATA));
+      await setDoc(DOC_REF,{data:JSON.stringify(data),updatedAt:Date.now()});
+    }
+    document.getElementById('loading').style.display='none';
+    render();
+
+    // Live listener — re-render when another user saves
+    onSnapshot(DOC_REF, snapshot=>{
+      if(!snapshot.exists())return;
+      if(isSaving)return;
+      const incoming=JSON.parse(snapshot.data().data||'null');
+      if(incoming){data=incoming;render();}
+    });
+
+    setSyncStatus('live');
+  }catch(e){
+    console.error(e);
+    setSyncStatus('error');
+    document.getElementById('loading').innerHTML=`<div style="text-align:center;color:white">
+      <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+      <div style="font-size:15px;margin-bottom:6px">Could not connect to Firebase</div>
+      <div style="font-size:12px;opacity:0.6">${e.message}</div>
+    </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
