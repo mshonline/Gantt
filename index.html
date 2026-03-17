@@ -175,15 +175,18 @@
 
   /* Add subtask row */
   .add-sub-row td { border-bottom: 1px solid var(--gray-border); }
-  .add-sub-btn { display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 28px; cursor: pointer; color: var(--blue); font-size: 11px; opacity: 0.6; transition: opacity 0.15s; }
+  .add-row-btns { display: flex; gap: 16px; padding: 3px 8px 3px 28px; }
+  .add-sub-btn { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; opacity: 0.6; transition: opacity 0.15s; color: var(--blue); }
   .add-sub-btn:hover { opacity: 1; }
+  .add-deliv-btn { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; opacity: 0.6; transition: opacity 0.15s; color: #B45309; }
+  .add-deliv-btn:hover { opacity: 1; }
 
-  /* Deliverable subtask styling */
-  .sub-label.is-deliverable .label-txt { color: #92400E; font-style: normal; font-weight: 500; }
-  .sub-label.is-deliverable .deliv-flag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; padding: 1px 5px; margin-right: 4px; white-space: nowrap; }
-  .sub-label .deliv-flag { display: none; }
-  .task-row.is-deliverable-row td { background: #FFFBEB !important; }
-  .task-row.is-deliverable-row td.bar-td .bar { background: #D97706 !important; }
+  /* Deliverable row styling */
+  .deliv-row td { background: #FFFBEB !important; border-bottom: 1px solid #FDE68A; }
+  .deliv-label { display: flex; align-items: center; gap: 4px; padding: 4px 8px 4px 28px; }
+  .deliv-label .label-txt { flex: 1; font-size: 11px; font-weight: 500; color: #92400E; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deliv-flag-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; padding: 1px 5px; white-space: nowrap; flex-shrink: 0; }
+  .deliv-separator td { border-top: 1px dashed #FCD34D; padding: 0; height: 0; }
   .due-badge { font-size: 10px; font-weight: 500; color: #92400E; background: #FEF3C7; border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
   .due-badge.overdue { background: #FEE2E2; color: #991B1B; }
   .due-badge.due-soon { background: #FEF3C7; color: #92400E; }
@@ -361,32 +364,32 @@ const BAR_COLORS = {
   'At Risk':      { task:'#C0392B', sub:'#E74C3C' },
 };
 
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
 const DEFAULT_DATA = {
   phases:[
     {id:'p1',name:'Kick Off',tasks:[
-      {id:'t1',name:'Kick Off Meeting',deliverable:'Revised workplan',start:'2026-03-16',end:'2026-03-20',status:'Not Started',subs:[]},
-      {id:'t2',name:'Document Review',deliverable:'Summary of findings',start:'2026-03-16',end:'2026-03-27',status:'Not Started',subs:[]},
-      {id:'t3',name:'Discussions with NAMI Leaders',deliverable:'Summary of findings',start:'2026-03-20',end:'2026-04-03',status:'Not Started',subs:[]},
+      {id:'t1',name:'Kick Off Meeting',deliverable:'Revised workplan',start:'2026-03-16',end:'2026-03-20',status:'Not Started',subs:[],delivs:[]},
+      {id:'t2',name:'Document Review',deliverable:'Summary of findings',start:'2026-03-16',end:'2026-03-27',status:'Not Started',subs:[],delivs:[]},
+      {id:'t3',name:'Discussions with NAMI Leaders',deliverable:'Summary of findings',start:'2026-03-20',end:'2026-04-03',status:'Not Started',subs:[],delivs:[]},
     ]},
     {id:'p2',name:'Design',tasks:[
-      {id:'t4',name:'Draft and finalize audience and scoping',deliverable:'Audience and scoping',start:'2026-03-20',end:'2026-04-17',status:'Not Started',subs:[]},
-      {id:'t5',name:'Develop program and course level objectives',deliverable:'Objectives',start:'2026-03-20',end:'2026-04-17',status:'Not Started',subs:[]},
-      {id:'t6',name:'Finalize scoping, audience and objectives',deliverable:'Audience, Scoping and Objectives',start:'2026-04-17',end:'2026-04-24',status:'Not Started',subs:[]},
-      {id:'t7',name:'Create course level blueprints',deliverable:'Course Blueprints',start:'2026-04-27',end:'2026-05-15',status:'Not Started',subs:[]},
+      {id:'t4',name:'Draft and finalize audience and scoping',deliverable:'Audience and scoping',start:'2026-03-20',end:'2026-04-17',status:'Not Started',subs:[],delivs:[]},
+      {id:'t5',name:'Develop program and course level objectives',deliverable:'Objectives',start:'2026-03-20',end:'2026-04-17',status:'Not Started',subs:[],delivs:[]},
+      {id:'t6',name:'Finalize scoping, audience and objectives',deliverable:'Audience, Scoping and Objectives',start:'2026-04-17',end:'2026-04-24',status:'Not Started',subs:[],delivs:[]},
+      {id:'t7',name:'Create course level blueprints',deliverable:'Course Blueprints',start:'2026-04-27',end:'2026-05-15',status:'Not Started',subs:[],delivs:[]},
     ]},
     {id:'p3',name:'Development (Novice Level)',tasks:[
-      {id:'t8',name:'Develop virtual course design',deliverable:'Virtual Delivery Design',start:'2026-05-18',end:'2026-05-29',status:'Not Started',subs:[]},
-      {id:'t9',name:'Create virtual course materials and resources',deliverable:'Virtual Content Materials',start:'2026-06-01',end:'2026-06-30',status:'Not Started',subs:[]},
-      {id:'t10',name:'Adapt virtual delivery guide for in-person',deliverable:'In Person Delivery Design',start:'2026-07-01',end:'2026-07-17',status:'Not Started',subs:[]},
-      {id:'t11',name:'Create adapted content for in-person delivery',deliverable:'In Person Content and Materials',start:'2026-07-01',end:'2026-07-24',status:'Not Started',subs:[]},
-      {id:'t12',name:'Create course protocols',deliverable:'Course Protocols (Virtual and In Person)',start:'2026-07-27',end:'2026-08-07',status:'Not Started',subs:[]},
-      {id:'t13',name:'Create tracking templates',deliverable:'Tracking Templates (Virtual and In Person)',start:'2026-08-03',end:'2026-08-14',status:'Not Started',subs:[]},
+      {id:'t8',name:'Develop virtual course design',deliverable:'Virtual Delivery Design',start:'2026-05-18',end:'2026-05-29',status:'Not Started',subs:[],delivs:[]},
+      {id:'t9',name:'Create virtual course materials and resources',deliverable:'Virtual Content Materials',start:'2026-06-01',end:'2026-06-30',status:'Not Started',subs:[],delivs:[]},
+      {id:'t10',name:'Adapt virtual delivery guide for in-person',deliverable:'In Person Delivery Design',start:'2026-07-01',end:'2026-07-17',status:'Not Started',subs:[],delivs:[]},
+      {id:'t11',name:'Create adapted content for in-person delivery',deliverable:'In Person Content and Materials',start:'2026-07-01',end:'2026-07-24',status:'Not Started',subs:[],delivs:[]},
+      {id:'t12',name:'Create course protocols',deliverable:'Course Protocols (Virtual and In Person)',start:'2026-07-27',end:'2026-08-07',status:'Not Started',subs:[],delivs:[]},
+      {id:'t13',name:'Create tracking templates',deliverable:'Tracking Templates (Virtual and In Person)',start:'2026-08-03',end:'2026-08-14',status:'Not Started',subs:[],delivs:[]},
     ]},
     {id:'p4',name:'Prepare Pilot',tasks:[
-      {id:'t14',name:'Conduct a final materials walk through',deliverable:'All Final Novice Products',start:'2026-08-17',end:'2026-09-04',status:'Not Started',subs:[]},
-      {id:'t15',name:'Host a handover meeting with trainers',deliverable:'Meeting Notes and Follow-up',start:'2026-09-07',end:'2026-09-18',status:'Not Started',subs:[]},
-      {id:'t16',name:'Final debrief with NAMI counterparts',deliverable:'Final Notes and Recommendations',start:'2026-09-21',end:'2026-09-25',status:'Not Started',subs:[]},
+      {id:'t14',name:'Conduct a final materials walk through',deliverable:'All Final Novice Products',start:'2026-08-17',end:'2026-09-04',status:'Not Started',subs:[],delivs:[]},
+      {id:'t15',name:'Host a handover meeting with trainers',deliverable:'Meeting Notes and Follow-up',start:'2026-09-07',end:'2026-09-18',status:'Not Started',subs:[],delivs:[]},
+      {id:'t16',name:'Final debrief with NAMI counterparts',deliverable:'Final Notes and Recommendations',start:'2026-09-21',end:'2026-09-25',status:'Not Started',subs:[],delivs:[]},
     ]},
   ]
 };
@@ -540,15 +543,13 @@ function render(){
       tbody.appendChild(tr);
 
       // Subtask rows
+      // ── Regular subtasks ──
       task.subs.forEach(sub=>{
         const sStart=strToDate(sub.start),sEnd=strToDate(sub.end);
         const sr=document.createElement('tr');sr.className='task-row'+(alt?' alt':'');
-        const isDeliv=!!sub.isDeliverable;
-        if(isDeliv)sr.classList.add('is-deliverable-row');
         const stL=document.createElement('td');stL.className='col-task';
-        const flagHtml=isDeliv?'<span class="deliv-flag">&#9873; deliverable</span>':'';
-        stL.innerHTML=`<div class="sub-label${isDeliv?' is-deliverable':''}">
-          ${flagHtml}<span class="label-txt" title="${sub.name}">${sub.name}</span>
+        stL.innerHTML=`<div class="sub-label">
+          <span class="label-txt" title="${sub.name}">${sub.name}</span>
           <div class="row-actions">
             <button class="btn-icon" onclick="openEditSub('${phase.id}','${task.id}','${sub.id}')" title="Edit">✎</button>
             <button class="btn-icon danger" onclick="deleteSub('${phase.id}','${task.id}','${sub.id}')" title="Delete">✕</button>
@@ -556,19 +557,7 @@ function render(){
         </div>`;
         sr.appendChild(stL);
         const stD=document.createElement('td');stD.className='col-deliv';
-        const sdd=document.createElement('div');sdd.className='deliv-cell';
-        if(isDeliv&&sub.end){
-          const due=new Date(sub.end+'T00:00:00');const now=new Date();now.setHours(0,0,0,0);
-          const diff=Math.round((due-now)/(1000*60*60*24));
-          let badgeCls='due-badge';let badgeTxt='';
-          if(sub.status==='Complete'){badgeCls='due-badge done';badgeTxt='Done';}
-          else if(diff<0){badgeCls='due-badge overdue';badgeTxt=`${Math.abs(diff)}d overdue`;}
-          else if(diff<=7){badgeCls='due-badge due-soon';badgeTxt=`Due in ${diff}d`;}
-          else{badgeTxt=due.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
-          sdd.innerHTML=`<span class="${badgeCls}">${badgeTxt}</span>`;
-        } else {
-          sdd.textContent=sub.deliverable||'—';
-        }
+        const sdd=document.createElement('div');sdd.className='deliv-cell';sdd.textContent=sub.deliverable||'—';
         stD.appendChild(sdd);sr.appendChild(stD);
         const stS=document.createElement('td');stS.className='col-status status-cell';
         const ssel=document.createElement('select');ssel.className='status-sel';
@@ -603,10 +592,80 @@ function render(){
         tbody.appendChild(sr);
       });
 
-      // Add subtask button row
+      // ── Deliverable rows (sorted after subtasks) ──
+      const delivs = (task.delivs||[]);
+      if(delivs.length){
+        const sepRow=document.createElement('tr');sepRow.className='deliv-separator';
+        const sepTd=document.createElement('td');sepTd.colSpan=3+WEEKS.length;
+        sepRow.appendChild(sepTd);tbody.appendChild(sepRow);
+      }
+      delivs.forEach(deliv=>{
+        const dStart=strToDate(deliv.start),dEnd=strToDate(deliv.end);
+        const dr=document.createElement('tr');dr.className='deliv-row';
+        const dL=document.createElement('td');dL.className='col-task';
+        dL.innerHTML=`<div class="deliv-label">
+          <span class="deliv-flag-badge">&#9873; deliverable</span>
+          <span class="label-txt" title="${deliv.name}">${deliv.name}</span>
+          <div class="row-actions">
+            <button class="btn-icon" onclick="openEditDeliv('${phase.id}','${task.id}','${deliv.id}')" title="Edit">✎</button>
+            <button class="btn-icon danger" onclick="deleteDeliv('${phase.id}','${task.id}','${deliv.id}')" title="Delete">✕</button>
+          </div>
+        </div>`;
+        dr.appendChild(dL);
+        const dD=document.createElement('td');dD.className='col-deliv';
+        const ddd=document.createElement('div');ddd.className='deliv-cell';
+        if(deliv.end){
+          const due=new Date(deliv.end+'T00:00:00');const now=new Date();now.setHours(0,0,0,0);
+          const diff=Math.round((due-now)/(1000*60*60*24));
+          let cls='due-badge',txt='';
+          if(deliv.status==='Complete'){cls='due-badge done';txt='Done';}
+          else if(diff<0){cls='due-badge overdue';txt=`${Math.abs(diff)}d overdue`;}
+          else if(diff<=7){cls='due-badge due-soon';txt=`Due in ${diff}d`;}
+          else{txt=due.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+          ddd.innerHTML=`<span class="${cls}">${txt}</span>`;
+        } else { ddd.textContent='No due date'; }
+        dD.appendChild(ddd);dr.appendChild(dD);
+        const dS=document.createElement('td');dS.className='col-status status-cell';
+        const dsel=document.createElement('select');dsel.className='status-sel';
+        const dsc=STATUS_COLORS[deliv.status]||STATUS_COLORS['Not Started'];
+        dsel.style.background=dsc.bg;dsel.style.color=dsc.color;dsel.style.borderColor=dsc.bg;
+        ['Not Started','In Progress','Complete','At Risk'].forEach(s=>{
+          const o=document.createElement('option');o.value=s;o.textContent=s;if(s===deliv.status)o.selected=true;dsel.appendChild(o);
+        });
+        dsel.onchange=e=>{
+          deliv.status=e.target.value;
+          const c=STATUS_COLORS[deliv.status];dsel.style.background=c.bg;dsel.style.color=c.color;dsel.style.borderColor=c.bg;
+          saveData();render();
+        };
+        dS.appendChild(dsel);dr.appendChild(dS);
+        WEEKS.forEach((w,wi)=>{
+          const td=document.createElement('td');td.className='bar-td'+(isToday(w)?' today-col':'');
+          td.style.background='#FFFBEB';
+          if(dStart&&dEnd&&weekOverlap(w,dStart,dEnd)){
+            const bar=document.createElement('div');bar.className='bar';
+            bar.style.background='#D97706';
+            bar.title=`${deliv.name}\n${deliv.start} → ${deliv.end}`;
+            bar.draggable=true;
+            bar.addEventListener('dragstart',e=>{
+              dragState={phaseId:phase.id,taskId:task.id,delivId:deliv.id,weekIdx:wi};
+              e.dataTransfer.effectAllowed='move';
+            });
+            td.appendChild(bar);
+          }
+          td.addEventListener('dragover',e=>e.preventDefault());
+          td.addEventListener('drop',e=>{e.preventDefault();handleDrop(wi);});
+          dr.appendChild(td);
+        });
+        tbody.appendChild(dr);
+      });
+
+      // Add subtask + add deliverable buttons
       const asr=document.createElement('tr');asr.className='add-sub-row';
       const astd=document.createElement('td');astd.colSpan=3+WEEKS.length;
-      astd.innerHTML=`<div class="add-sub-btn" onclick="openAddSub('${phase.id}','${task.id}')">＋ add subtask</div>`;
+      astd.innerHTML=`<div class="add-row-btns">
+        <div class="add-sub-btn" onclick="openAddSub('${phase.id}','${task.id}')">＋ add subtask</div>
+        <div class="add-deliv-btn" onclick="openAddDeliv('${phase.id}','${task.id}')">&#9873; add deliverable</div>
+      </div>`;
       asr.appendChild(astd);tbody.appendChild(asr);
     });
   });
@@ -618,7 +677,10 @@ function handleDrop(targetWeekIdx){
   if(delta===0){dragState=null;return;}
   const phase=data.phases.find(p=>p.id===dragState.phaseId);if(!phase)return;
   const task=phase.tasks.find(t=>t.id===dragState.taskId);if(!task)return;
-  const item=dragState.subId?task.subs.find(s=>s.id===dragState.subId):task;
+  let item;
+  if(dragState.delivId) item=( task.delivs||[]).find(d=>d.id===dragState.delivId);
+  else if(dragState.subId) item=task.subs.find(s=>s.id===dragState.subId);
+  else item=task;
   if(!item||!item.start||!item.end){dragState=null;return;}
   const s=strToDate(item.start),e=strToDate(item.end);
   s.setDate(s.getDate()+delta*7);e.setDate(e.getDate()+delta*7);
@@ -634,16 +696,14 @@ function renderDeliverables(){
   const delivs=[];
   data.phases.forEach(phase=>{
     phase.tasks.forEach(task=>{
-      task.subs.forEach(sub=>{
-        if(sub.isDeliverable){
-          delivs.push({phase:phase.name,task:task.name,sub,phaseId:phase.id,taskId:task.id});
-        }
+      (task.delivs||[]).forEach(deliv=>{
+        delivs.push({phase:phase.name,task:task.name,deliv,phaseId:phase.id,taskId:task.id});
       });
     });
   });
   delivs.sort((a,b)=>{
-    if(!a.sub.end)return 1;if(!b.sub.end)return -1;
-    return new Date(a.sub.end)-new Date(b.sub.end);
+    if(!a.deliv.end)return 1;if(!b.deliv.end)return -1;
+    return new Date(a.deliv.end)-new Date(b.deliv.end);
   });
   countEl.textContent=delivs.length?`${delivs.length} deliverable${delivs.length!==1?'s':''}`:'' ;
   if(!delivs.length){
@@ -653,49 +713,46 @@ function renderDeliverables(){
   const table=document.createElement('table');table.className='deliv-table';
   table.innerHTML='<thead><tr><th>Deliverable</th><th>Phase / Task</th><th>Due date</th><th>Status</th><th>Notes</th></tr></thead>';
   const tbody=document.createElement('tbody');
-  delivs.forEach(({phase,task,sub,phaseId,taskId})=>{
+  delivs.forEach(({phase,task,deliv,phaseId,taskId})=>{
     const tr=document.createElement('tr');
     const now=new Date();now.setHours(0,0,0,0);
     let dueTxt='—';let badgeCls='due-badge';
-    if(sub.end){
-      const due=new Date(sub.end+'T00:00:00');
+    if(deliv.end){
+      const due=new Date(deliv.end+'T00:00:00');
       const diff=Math.round((due-now)/(1000*60*60*24));
-      if(sub.status==='Complete'){badgeCls='due-badge done';dueTxt='Done';}
+      if(deliv.status==='Complete'){badgeCls='due-badge done';dueTxt='Done';}
       else if(diff<0){badgeCls='due-badge overdue';dueTxt=`${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})} (${Math.abs(diff)}d overdue)`;}
       else if(diff<=7){badgeCls='due-badge due-soon';dueTxt=`${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})} (in ${diff}d)`;}
       else{dueTxt=due.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
     }
-    const sc=STATUS_COLORS[sub.status]||STATUS_COLORS['Not Started'];
+    const sc=STATUS_COLORS[deliv.status]||STATUS_COLORS['Not Started'];
     tr.innerHTML=`
-      <td><strong style="font-size:12px">${sub.name}</strong>${sub.deliverable?`<br><span style="font-size:11px;color:var(--text-muted)">${sub.deliverable}</span>`:''}</td>
+      <td><strong style="font-size:12px">${deliv.name}</strong>${deliv.notes?`<br><span style="font-size:11px;color:var(--text-muted)">${deliv.notes}</span>`:''}</td>
       <td><span class="deliv-phase-tag">${phase}</span><br><span style="font-size:11px;color:var(--text-muted);margin-top:2px;display:block">${task}</span></td>
       <td><span class="${badgeCls}">${dueTxt}</span></td>
-      <td><select class="status-sel" style="background:${sc.bg};color:${sc.color};border-color:${sc.bg}" data-pid="${phaseId}" data-tid="${taskId}" data-sid="${sub.id}">${['Not Started','In Progress','Complete','At Risk'].map(s=>`<option${s===sub.status?' selected':''}>${s}</option>`).join('')}</select></td>
-      <td><input class="deliv-notes-input" value="${sub.notes||''}" placeholder="Add notes…" data-pid="${phaseId}" data-tid="${taskId}" data-sid="${sub.id}"></td>`;
+      <td><select class="status-sel" style="background:${sc.bg};color:${sc.color};border-color:${sc.bg}" data-pid="${phaseId}" data-tid="${taskId}" data-did="${deliv.id}">${['Not Started','In Progress','Complete','At Risk'].map(s=>`<option${s===deliv.status?' selected':''}>${s}</option>`).join('')}</select></td>
+      <td><input class="deliv-notes-input" value="${deliv.notes||''}" placeholder="Add notes…" data-pid="${phaseId}" data-tid="${taskId}" data-did="${deliv.id}"></td>`;
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
   body.innerHTML='';body.appendChild(table);
 
-  // Status change from deliverables panel
   body.querySelectorAll('select.status-sel').forEach(sel=>{
     sel.onchange=e=>{
-      const {pid,tid,sid}=e.target.dataset;
+      const {pid,tid,did}=e.target.dataset;
       const ph=data.phases.find(p=>p.id===pid);
       const tk=ph&&ph.tasks.find(t=>t.id===tid);
-      const sb=tk&&tk.subs.find(s=>s.id===sid);
-      if(sb){sb.status=e.target.value;saveData();render();}
+      const dv=(tk&&tk.delivs||[]).find(d=>d.id===did);
+      if(dv){dv.status=e.target.value;saveData();render();}
     };
   });
-
-  // Notes blur save from deliverables panel
   body.querySelectorAll('input.deliv-notes-input').forEach(inp=>{
     inp.onblur=e=>{
-      const {pid,tid,sid}=e.target.dataset;
+      const {pid,tid,did}=e.target.dataset;
       const ph=data.phases.find(p=>p.id===pid);
       const tk=ph&&ph.tasks.find(t=>t.id===tid);
-      const sb=tk&&tk.subs.find(s=>s.id===sid);
-      if(sb&&sb.notes!==e.target.value){sb.notes=e.target.value;saveData();}
+      const dv=(tk&&tk.delivs||[]).find(d=>d.id===did);
+      if(dv&&dv.notes!==e.target.value){dv.notes=e.target.value;saveData();}
     };
   });
 }
@@ -740,7 +797,7 @@ window.addTask=()=>{
   const end=document.getElementById('f-end').value;
   if(!name||!start||!end)return;
   const phase=data.phases.find(p=>p.id===phaseId);if(!phase)return;
-  phase.tasks.push({id:uid(),name,deliverable:deliv,start,end,status:'Not Started',subs:[]});
+  phase.tasks.push({id:uid(),name,deliverable:deliv,start,end,status:'Not Started',subs:[],delivs:[]});
   saveData();closeModal();render();
 };
 
@@ -772,34 +829,21 @@ window.saveEditTask=(phaseId,taskId)=>{
 window.openAddSub=(phaseId,taskId)=>{
   showModal(`<div class="modal"><div class="modal-title">Add subtask</div>
     <div class="form-row"><label>Subtask name</label><input id="f-sname" placeholder="Subtask name" autofocus></div>
+    <div class="form-row"><label>Description (optional)</label><input id="f-sdeliv" placeholder=""></div>
     <div class="form-2col">
       <div class="form-row"><label>Start date</label><input id="f-sstart" type="date"></div>
-      <div class="form-row"><label>Due date</label><input id="f-send" type="date"></div>
-    </div>
-    <div class="checkbox-row" style="margin-bottom:8px">
-      <input type="checkbox" id="f-isdeliv">
-      <label for="f-isdeliv">Flag as deliverable</label>
-    </div>
-    <div id="deliv-extra" style="display:none">
-      <div class="form-row"><label>Deliverable description</label><input id="f-sdeliv" placeholder="What gets delivered?"></div>
-      <div class="form-row"><label>Notes</label><input id="f-snotes" placeholder="Any context or requirements..."></div>
+      <div class="form-row"><label>End date</label><input id="f-send" type="date"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn btn-save" onclick="addSub('${phaseId}','${taskId}')">Add subtask</button>
     </div></div>`);
-  document.getElementById('f-isdeliv').onchange=e=>{
-    document.getElementById('deliv-extra').style.display=e.target.checked?'block':'none';
-  };
 };
 window.addSub=(phaseId,taskId)=>{
   const name=document.getElementById('f-sname').value.trim();if(!name)return;
   const phase=data.phases.find(p=>p.id===phaseId);
   const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
-  const isDeliv=document.getElementById('f-isdeliv').checked;
-  const delivDesc=document.getElementById('f-sdeliv')?document.getElementById('f-sdeliv').value.trim():'';
-  const notes=document.getElementById('f-snotes')?document.getElementById('f-snotes').value.trim():'';
-  task.subs.push({id:uid(),name,deliverable:delivDesc,start:document.getElementById('f-sstart').value,end:document.getElementById('f-send').value,status:'Not Started',isDeliverable:isDeliv,notes});
+  task.subs.push({id:uid(),name,deliverable:document.getElementById('f-sdeliv').value.trim(),start:document.getElementById('f-sstart').value,end:document.getElementById('f-send').value,status:'Not Started'});
   saveData();closeModal();render();
 };
 
@@ -807,38 +851,24 @@ window.openEditSub=(phaseId,taskId,subId)=>{
   const phase=data.phases.find(p=>p.id===phaseId);
   const task=phase&&phase.tasks.find(t=>t.id===taskId);
   const sub=task&&task.subs.find(s=>s.id===subId);if(!sub)return;
-  const isD=sub.isDeliverable?'checked':'';
-  const extraVis=sub.isDeliverable?'block':'none';
   showModal(`<div class="modal"><div class="modal-title">Edit subtask</div>
     <div class="form-row"><label>Subtask name</label><input id="f-sname" value="${sub.name}" autofocus></div>
+    <div class="form-row"><label>Description</label><input id="f-sdeliv" value="${sub.deliverable||''}"></div>
     <div class="form-2col">
       <div class="form-row"><label>Start date</label><input id="f-sstart" type="date" value="${sub.start}"></div>
-      <div class="form-row"><label>Due date</label><input id="f-send" type="date" value="${sub.end}"></div>
-    </div>
-    <div class="checkbox-row" style="margin-bottom:8px">
-      <input type="checkbox" id="f-isdeliv" ${isD}>
-      <label for="f-isdeliv">Flag as deliverable</label>
-    </div>
-    <div id="deliv-extra" style="display:${extraVis}">
-      <div class="form-row"><label>Deliverable description</label><input id="f-sdeliv" value="${sub.deliverable||''}" placeholder="What gets delivered?"></div>
-      <div class="form-row"><label>Notes</label><input id="f-snotes" value="${sub.notes||''}" placeholder="Any context or requirements..."></div>
+      <div class="form-row"><label>End date</label><input id="f-send" type="date" value="${sub.end}"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn btn-save" onclick="saveEditSub('${phaseId}','${taskId}','${subId}')">Save changes</button>
     </div></div>`);
-  document.getElementById('f-isdeliv').onchange=e=>{
-    document.getElementById('deliv-extra').style.display=e.target.checked?'block':'none';
-  };
 };
 window.saveEditSub=(phaseId,taskId,subId)=>{
   const phase=data.phases.find(p=>p.id===phaseId);
   const task=phase&&phase.tasks.find(t=>t.id===taskId);
   const sub=task&&task.subs.find(s=>s.id===subId);if(!sub)return;
   sub.name=document.getElementById('f-sname').value.trim()||sub.name;
-  sub.isDeliverable=document.getElementById('f-isdeliv').checked;
-  sub.deliverable=document.getElementById('f-sdeliv')?document.getElementById('f-sdeliv').value.trim():'';
-  sub.notes=document.getElementById('f-snotes')?document.getElementById('f-snotes').value.trim():'';
+  sub.deliverable=document.getElementById('f-sdeliv').value.trim();
   sub.start=document.getElementById('f-sstart').value;
   sub.end=document.getElementById('f-send').value;
   saveData();closeModal();render();
@@ -856,6 +886,60 @@ window.deleteSub=(phaseId,taskId,subId)=>{
   task.subs=task.subs.filter(s=>s.id!==subId);
   saveData();render();
 };
+window.openAddDeliv=(phaseId,taskId)=>{
+  showModal(`<div class="modal"><div class="modal-title" style="color:#92400E">&#9873; Add deliverable</div>
+    <div class="form-row"><label>Deliverable name</label><input id="f-dname" placeholder="What gets delivered?" autofocus></div>
+    <div class="form-row"><label>Description / notes</label><input id="f-dnotes" placeholder="Any context or requirements..."></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Start date</label><input id="f-dstart" type="date"></div>
+      <div class="form-row"><label>Due date</label><input id="f-dend" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" style="background:#92400E;border-color:#92400E" onclick="addDeliv('${phaseId}','${taskId}')">Add deliverable</button>
+    </div></div>`);
+};
+window.addDeliv=(phaseId,taskId)=>{
+  const name=document.getElementById('f-dname').value.trim();if(!name)return;
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
+  if(!task.delivs)task.delivs=[];
+  task.delivs.push({id:uid(),name,notes:document.getElementById('f-dnotes').value.trim(),start:document.getElementById('f-dstart').value,end:document.getElementById('f-dend').value,status:'Not Started'});
+  saveData();closeModal();render();
+};
+window.openEditDeliv=(phaseId,taskId,delivId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);
+  const deliv=(task&&task.delivs||[]).find(d=>d.id===delivId);if(!deliv)return;
+  showModal(`<div class="modal"><div class="modal-title" style="color:#92400E">&#9873; Edit deliverable</div>
+    <div class="form-row"><label>Deliverable name</label><input id="f-dname" value="${deliv.name}" autofocus></div>
+    <div class="form-row"><label>Description / notes</label><input id="f-dnotes" value="${deliv.notes||''}"></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Start date</label><input id="f-dstart" type="date" value="${deliv.start}"></div>
+      <div class="form-row"><label>Due date</label><input id="f-dend" type="date" value="${deliv.end}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" style="background:#92400E;border-color:#92400E" onclick="saveEditDeliv('${phaseId}','${taskId}','${delivId}')">Save changes</button>
+    </div></div>`);
+};
+window.saveEditDeliv=(phaseId,taskId,delivId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);
+  const deliv=(task&&task.delivs||[]).find(d=>d.id===delivId);if(!deliv)return;
+  deliv.name=document.getElementById('f-dname').value.trim()||deliv.name;
+  deliv.notes=document.getElementById('f-dnotes').value.trim();
+  deliv.start=document.getElementById('f-dstart').value;
+  deliv.end=document.getElementById('f-dend').value;
+  saveData();closeModal();render();
+};
+window.deleteDeliv=(phaseId,taskId,delivId)=>{
+  const phase=data.phases.find(p=>p.id===phaseId);
+  const task=phase&&phase.tasks.find(t=>t.id===taskId);if(!task)return;
+  task.delivs=(task.delivs||[]).filter(d=>d.id!==delivId);
+  saveData();render();
+};
+
 window.deletePhase=(phaseId)=>{
   if(!confirm('Delete this entire phase and all its tasks?'))return;
   data.phases=data.phases.filter(p=>p.id!==phaseId);
