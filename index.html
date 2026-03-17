@@ -322,13 +322,11 @@ const BAR_COLORS = {
   'At Risk':      { task:'#C0392B', sub:'#E74C3C' },
 };
 
+const DATA_VERSION = 2;
 const DEFAULT_DATA = {
   phases:[
     {id:'p1',name:'Kick Off',tasks:[
-      {id:'t1',name:'Kick Off Meeting',deliverable:'Revised workplan',start:'2026-03-16',end:'2026-03-20',status:'Not Started',subs:[
-        {id:'s1a',name:'Subtask 1',deliverable:'',start:'',end:'',status:'Not Started'},
-        {id:'s1b',name:'Subtask 2',deliverable:'',start:'',end:'',status:'Not Started'},
-      ]},
+      {id:'t1',name:'Kick Off Meeting',deliverable:'Revised workplan',start:'2026-03-16',end:'2026-03-20',status:'Not Started',subs:[]},
       {id:'t2',name:'Document Review',deliverable:'Summary of findings',start:'2026-03-16',end:'2026-03-27',status:'Not Started',subs:[]},
       {id:'t3',name:'Discussions with NAMI Leaders',deliverable:'Summary of findings',start:'2026-03-20',end:'2026-04-03',status:'Not Started',subs:[]},
     ]},
@@ -712,11 +710,12 @@ window.deletePhase=(phaseId)=>{
 async function init(){
   try{
     const snap=await getDoc(DOC_REF);
-    if(snap.exists()&&snap.data().data){
+    const snapVersion=snap.exists()&&snap.data().version;
+    if(snap.exists()&&snap.data().data&&snapVersion===DATA_VERSION){
       data=JSON.parse(snap.data().data);
     } else {
       data=JSON.parse(JSON.stringify(DEFAULT_DATA));
-      await setDoc(DOC_REF,{data:JSON.stringify(data),updatedAt:Date.now()});
+      await setDoc(DOC_REF,{data:JSON.stringify(data),updatedAt:Date.now(),version:DATA_VERSION});
     }
     document.getElementById('loading').style.display='none';
     render();
