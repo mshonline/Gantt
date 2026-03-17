@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -710,14 +709,8 @@ window.deletePhase=(phaseId)=>{
 // ── Bootstrap: load from Firestore, then listen for changes ──
 async function init(){
   try{
-    const snap=await getDoc(DOC_REF);
-    const snapVersion=snap.exists()&&snap.data().version;
-    if(snap.exists()&&snap.data().data&&snapVersion===DATA_VERSION){
-      data=JSON.parse(snap.data().data);
-    } else {
-      data=JSON.parse(JSON.stringify(DEFAULT_DATA));
-      await setDoc(DOC_REF,{data:JSON.stringify(data),updatedAt:Date.now(),version:DATA_VERSION});
-    }
+    data=JSON.parse(JSON.stringify(DEFAULT_DATA));
+    await setDoc(DOC_REF,{data:JSON.stringify(data),updatedAt:Date.now(),version:DATA_VERSION});
     document.getElementById('loading').style.display='none';
     render();
 
